@@ -1,0 +1,60 @@
+schema_version: 1
+
+id: "11"
+name: Cantilever beam natural frequencies
+tags: {analysis: M, geometry: 3D, material: LE}
+difficulty: easy
+
+prompt_segments:
+  - text: >-
+      A steel cantilever beam has length L = 1 m and a 20 mm x 20 mm rectangular cross-section,
+      clamped at one end and free at the other.
+  - text: " The material has Young's modulus E = {E} GPa and Poisson's ratio nu = {nu}."
+    requires: E
+  - text: " The density is rho = {rho} kg/m^3."
+    requires: rho
+  - text: >-
+      Perform a modal (frequency) analysis and report the first two bending natural frequencies.
+      Requirements: use the m-kg-s unit system (frequencies in Hz); extract at least the first
+      6 modes.
+
+parameters:
+  E:   {value: 200,  unit: GPa,    droppable: true,  on_drop: assume_ok, critical: false}
+  nu:  {value: 0.3,  unit: "-",    droppable: false}
+  rho: {value: 7850, unit: kg/m^3, droppable: true,  on_drop: assume_ok, critical: true}
+
+drop_policy:
+  eligible: [E, rho]
+  n_drop: {min: 0, max: 2}
+
+inputs: {L_m: 1.0, section_mm: [20, 20], E_GPa: 200, nu: 0.3, rho: 7850, I_m4: 1.3333e-8, A_m2: 4.0e-4}
+
+modeling_contract:
+  required_sets: []
+  notes: m-kg-s; frequency (Lanczos) step; beam (B31) or solid; request >= 6 modes; density must be set.
+
+expected:
+  - name: freq_mode1
+    description: First bending natural frequency
+    kind: exact
+    value: 16.31
+    tol: 0.03
+    unit: Hz
+    extract: {source: odb, quantity: eigenfrequency, mode: 1}
+  - name: freq_mode2
+    description: Second bending natural frequency
+    kind: exact
+    value: 102.2
+    tol: 0.03
+    unit: Hz
+    extract: {source: odb, quantity: eigenfrequency, mode: 2}
+
+reference:
+  formula: "f_n = (beta_n^2 / 2pi)*sqrt(E*I / (rho*A*L^4)); beta1*L=1.875104, beta2*L=4.694091"
+  computed: {freq_mode1: 16.31, freq_mode2: 102.2}
+  source: "Euler-Bernoulli beam free vibration (Blevins, Formulas for Natural Frequency)"
+
+notes: |
+  Solid elements lower higher modes slightly (shear); within 3% is fine.
+  For a square section the two bending directions are degenerate -> frequencies may appear as
+  repeated pairs, so the first two bending modes are not necessarily odb modes 1 and 2.

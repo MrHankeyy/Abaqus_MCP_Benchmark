@@ -1,0 +1,58 @@
+schema_version: 1
+
+id: "04"
+name: Simply supported square plate under uniform pressure
+tags: {analysis: S, geometry: Sh, material: LE}
+difficulty: easy
+
+prompt_segments:
+  - text: "A square plate of side length a = 1.0 m is simply supported on all four edges."
+  - text: " The plate thickness is t = {t} mm."
+    requires: t
+  - text: " A uniform pressure q = {q} kPa acts on the top surface."
+    requires: q
+  - text: " The material is steel: Young's modulus E = {E} GPa, Poisson's ratio nu = {nu}."
+    requires: E
+  - text: >-
+      Build a shell model and report the maximum deflection at the plate centre and the maximum
+      bending stress at the centre. Requirements: use the m-N-Pa unit system; create a node set
+      named CENTER at the plate-centre node.
+
+parameters:
+  t:  {value: 10,  unit: mm,  droppable: true,  on_drop: ask,       critical: true}
+  q:  {value: 10,  unit: kPa, droppable: true,  on_drop: ask,       critical: true}
+  E:  {value: 200, unit: GPa, droppable: true,  on_drop: assume_ok, critical: false}
+  nu: {value: 0.3, unit: "-", droppable: false}
+
+drop_policy:
+  eligible: [t, q, E]
+  n_drop: {min: 0, max: 2}
+
+inputs: {a_m: 1.0, t_mm: 10, q_kPa: 10, E_GPa: 200, nu: 0.3, D_Nm: 18315}
+
+modeling_contract:
+  required_sets: [CENTER]
+  notes: m-N-Pa unit system; thin-shell elements (S4R/S8R); simple supports (constrain translation, free rotation).
+
+expected:
+  - name: center_deflection
+    description: Maximum out-of-plane deflection at the plate centre
+    kind: exact
+    value: 2.22e-3
+    tol: 0.03
+    unit: m
+    extract: {source: odb, field: U, component: U3, location: {set: CENTER, op: mean}}
+  - name: center_bending_stress
+    description: Maximum bending stress at the plate centre (surface)
+    kind: exact
+    value: 28.7
+    tol: 0.05
+    unit: MPa
+    extract: {source: odb, field: S, component: S11, location: {set: CENTER, op: max_abs}}
+
+reference:
+  formula: "D = E t^3/[12(1-nu^2)]; w = 0.00406 q a^4 / D; M_c = 0.0479 q a^2; sigma = 6 M_c / t^2"
+  computed: {center_deflection: 2.22e-3, center_bending_stress: 28.7}
+  source: "Timoshenko, Theory of Plates and Shells (SS square plate coefficients)"
+
+notes: a/t = 100 -> thin plate; thin-shell theory applies.

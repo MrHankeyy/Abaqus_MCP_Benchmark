@@ -1,0 +1,60 @@
+schema_version: 1
+
+id: "17"
+name: Stress-wave propagation in a bar (explicit)
+tags: {analysis: D, geometry: 3D, material: LE}
+difficulty: medium
+
+prompt_segments:
+  - text: >-
+      A steel bar of length L = 1.0 m with a 10 mm x 10 mm square cross-section is fixed at one
+      end. At t = 0 a suddenly applied, constant axial tensile load (step) is imposed on the
+      free end.
+  - text: " The material has Young's modulus E = {E} GPa."
+    requires: E
+  - text: " The density is rho = {rho} kg/m^3."
+    requires: rho
+  - text: " The applied step axial force is F = {F} kN."
+    requires: F
+  - text: >-
+      Use explicit dynamics. Report the time at which the stress wave first arrives at the fixed
+      end (before any reflection). Requirements: use the m-N-Pa-s unit system; put the fixed-end
+      nodes in a node set named FIXED_END.
+
+parameters:
+  E:   {value: 200,  unit: GPa,    droppable: true,  on_drop: assume_ok, critical: false}
+  rho: {value: 7850, unit: kg/m^3, droppable: true,  on_drop: assume_ok, critical: true}
+  F:   {value: 50,   unit: kN,     droppable: true,  on_drop: ask,       critical: false}
+
+drop_policy:
+  eligible: [E, rho, F]
+  n_drop: {min: 0, max: 2}
+
+inputs: {L_m: 1.0, E_GPa: 200, rho: 7850, F_kN: 50}
+
+modeling_contract:
+  required_sets: [FIXED_END]
+  notes: m-N-Pa-s; explicit dynamics; fine axial mesh to resolve the wave front; fixed one end.
+
+expected:
+  - name: arrival_time
+    description: First arrival time of the stress wave at the fixed end
+    kind: exact
+    value: 1.98e-4
+    tol: 0.05
+    unit: s
+    extract: {source: odb, field: S, component: S33, quantity: first_arrival, location: {set: FIXED_END, op: max_abs}}
+  - name: wave_speed
+    description: 1-D elastic wave speed (derived)
+    kind: exact
+    value: 5048
+    tol: 0.05
+    unit: m/s
+    extract: {source: agent_report, report_key: wave_speed}
+
+reference:
+  formula: "c = sqrt(E/rho); t_arrival = L / c"
+  computed: {arrival_time: 1.98e-4, wave_speed: 5048}
+  source: "1-D elastic wave theory"
+
+notes: Wave speed is independent of the load magnitude; F affects amplitude only.

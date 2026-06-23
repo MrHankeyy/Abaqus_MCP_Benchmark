@@ -1,0 +1,53 @@
+schema_version: 1
+
+id: "05"
+name: NAFEMS LE10 thick plate under pressure
+tags: {analysis: S, geometry: 3D, material: LE}
+difficulty: medium
+
+prompt_segments:
+  - text: >-
+      Solve the NAFEMS LE10 thick-plate benchmark (3-D solid). An elliptic thick plate has an
+      outer ellipse with semi-axes 3.25 m and 2.75 m and an inner elliptic hole with semi-axes
+      2.0 m and 1.25 m; the plate thickness is 0.6 m. Use the standard LE10 symmetry/edge
+      conditions: the outer rim lower edge is constrained as in the benchmark, the inner hole
+      face is constrained normal to its surface, and symmetry is applied on the two cut faces.
+  - text: " A uniform pressure p = {p} MPa acts on the top surface."
+    requires: p
+  - text: " The material is steel: Young's modulus E = {E} GPa, Poisson's ratio nu = {nu}."
+    requires: E
+  - text: >-
+      Report the direct stress sigma_yy at point D, the midpoint of the lower edge of the inner
+      hole. Requirements: use the m-N-Pa unit system; create a node set named POINT_D at that
+      point.
+
+parameters:
+  p:  {value: 1.0, unit: MPa, droppable: true,  on_drop: ask,       critical: true}
+  E:  {value: 210, unit: GPa, droppable: true,  on_drop: assume_ok, critical: false}
+  nu: {value: 0.3, unit: "-", droppable: false}
+
+drop_policy:
+  eligible: [p, E]
+  n_drop: {min: 0, max: 2}
+
+inputs: {E_GPa: 210, nu: 0.3, p_MPa: 1.0, thickness_m: 0.6}
+
+modeling_contract:
+  required_sets: [POINT_D]
+  notes: m-N-Pa unit system; quadratic solid elements (C3D20R); >= 2 elements through thickness.
+
+expected:
+  - name: sigma_yy_D
+    description: Direct stress sigma_yy at point D (compressive)
+    kind: exact
+    value: -5.38
+    tol: 0.05
+    unit: MPa
+    extract: {source: odb, field: S, component: S22, location: {set: POINT_D, op: mean}}
+
+reference:
+  formula: "NAFEMS standard target solution (no elementary closed form)"
+  computed: {sigma_yy_D: -5.38}
+  source: "NAFEMS LE10 / Abaqus Benchmarks Manual 4.2.10 (target -5.38 MPa)"
+
+notes: Thick plate; capture through-thickness bending with quadratic solids.

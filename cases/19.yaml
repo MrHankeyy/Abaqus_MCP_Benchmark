@@ -1,0 +1,64 @@
+schema_version: 1
+
+id: "19"
+name: Viscoelastic strip, damped free vibration
+tags: {analysis: D, geometry: Pl, material: VE}
+difficulty: hard
+
+prompt_segments:
+  - text: >-
+      A cantilever strip 200 mm long and 20 mm wide with thickness 2 mm (plane-stress) is
+      clamped at one end. The free end is given an initial transverse displacement and then
+      released to vibrate freely.
+  - text: >-
+      The material is linear viscoelastic: instantaneous modulus E0 = {E0} GPa, Poisson's ratio
+      nu = {nu}, single Prony term g1 = {g1}.
+  - text: " The density is rho = {rho} kg/m^3."
+    requires: rho
+  - text: " The Prony relaxation time is tau1 = {tau} s."
+    requires: tau
+  - text: >-
+      Report how the tip amplitude decays in time and estimate the effective damping ratio from
+      successive peaks. Requirements: use the mm-N-MPa-s unit system; put the tip node in a node
+      set named TIP.
+
+parameters:
+  E0:  {value: 3,    unit: GPa,    droppable: false}
+  nu:  {value: 0.4,  unit: "-",    droppable: false}
+  rho: {value: 1200, unit: kg/m^3, droppable: true,  on_drop: ask, critical: true}
+  g1:  {value: 0.3,  unit: "-",    droppable: false}
+  tau: {value: 0.05, unit: s,      droppable: true,  on_drop: ask, critical: true}
+
+drop_policy:
+  eligible: [rho, tau]
+  n_drop: {min: 0, max: 2}
+
+inputs: {L_mm: 200, w_mm: 20, t_mm: 2, E0_GPa: 3, nu: 0.4, rho: 1200, g1: 0.3, tau1_s: 0.05}
+
+modeling_contract:
+  required_sets: [TIP]
+  notes: mm-N-MPa-s; implicit dynamics; time-domain viscoelasticity; do NOT add Rayleigh damping (material provides damping).
+
+expected:
+  - name: damping_ratio
+    description: Effective damping ratio from log-decrement of successive tip peaks
+    kind: trend
+    range: [0.01, 0.2]
+    sign: "+"
+    unit: "-"
+    value_status: needs_literature_pinning
+    extract: {source: odb, field: U, component: U_transverse, quantity: decay_envelope, location: {set: TIP, op: max_abs}}
+  - name: amplitude_decays
+    description: Tip amplitude should decay monotonically (exponential envelope)
+    kind: trend
+    monotonic: "decreasing vs time"
+    extract: {source: odb, field: U, component: U_transverse, quantity: decay_envelope, location: {set: TIP, op: max_abs}}
+
+reference:
+  formula: "delta = ln(x_n/x_{n+1}); zeta = delta/sqrt(4 pi^2 + delta^2) ~ tan_delta/2 at resonance"
+  computed: null
+  source: "Viscoelastic damped free vibration (structural dynamics)"
+
+notes: |
+  No simple closed form; graded on trend (monotonic decay) and order-of-magnitude zeta.
+  A common D3/D4 trap: adding Rayleigh damping on top of the material damping (double counting).

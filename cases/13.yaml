@@ -1,0 +1,54 @@
+schema_version: 1
+
+id: "13"
+name: Simply supported solid square plate, modal (FV52-like)
+tags: {analysis: M, geometry: 3D, material: LE}
+difficulty: medium
+
+prompt_segments:
+  - text: >-
+      A solid square plate measuring 10 m x 10 m x 1 m is simply supported on all four edges
+      (the lower edges of the four side faces are restrained vertically). Model it with solid
+      elements.
+  - text: " The material has Poisson's ratio nu = {nu}."
+  - text: " The Young's modulus is E = {E} GPa."
+    requires: E
+  - text: " The density is rho = {rho} kg/m^3."
+    requires: rho
+  - text: >-
+      Perform a modal (frequency) analysis and report the fundamental natural frequency.
+      Requirements: use the m-kg-s unit system (frequencies in Hz); extract at least the first
+      6 modes.
+
+parameters:
+  E:   {value: 200,  unit: GPa,    droppable: true,  on_drop: assume_ok, critical: false}
+  nu:  {value: 0.3,  unit: "-",    droppable: false}
+  rho: {value: 8000, unit: kg/m^3, droppable: true,  on_drop: ask,       critical: true}
+
+drop_policy:
+  eligible: [E, rho]
+  n_drop: {min: 0, max: 2}
+
+inputs: {Lx_m: 10, Ly_m: 10, t_m: 1, E_GPa: 200, nu: 0.3, rho: 8000}
+
+modeling_contract:
+  required_sets: []
+  notes: m-kg-s; solid elements (C3D20R); simple supports on the four lower edges; frequency step.
+
+expected:
+  - name: freq_fundamental
+    description: Fundamental natural frequency
+    kind: exact
+    value: 47.5
+    tol: 0.06
+    unit: Hz
+    extract: {source: odb, quantity: eigenfrequency, mode: 1}
+
+reference:
+  formula: "Thin-plate baseline f11 = (pi/2)(2)/a^2 * sqrt(D/(rho t)); D = E t^3/[12(1-nu^2)]"
+  computed: {freq_fundamental: 47.5}
+  source: "NAFEMS FV52 (solid SS plate); thin-plate analytical baseline"
+
+notes: |
+  rho = 8000 is given (not standard steel 7850), so dropping rho should trigger a question.
+  Shear deformation makes the solid result a few % below the thin-plate baseline; hence the 6% tolerance.
