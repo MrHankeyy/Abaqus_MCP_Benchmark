@@ -1,0 +1,97 @@
+# ABAQUS-MCP Benchmark — Unified YAML format definition (schema)
+# Every cases/NN.yaml must follow this structure. The grading scripts read cases per this spec.
+# This file documents field meanings only; it is not itself a graded case.
+
+schema_version: 1
+
+fields:
+  id:        "Two-digit string id matching the benchmark table, e.g. '03'."
+  name:      "Human-readable case name."
+  tags:
+    analysis:  "S static | M modal | B buckling | D dynamics | T thermal-mechanical"
+    geometry:  "Tr truss | Pl plane | Ax axisymmetric | Sh plate/shell | 3D solid"
+    material:  "LE linear-elastic | HE hyperelastic | EP elastoplastic | VE viscoelastic"
+  difficulty:  "easy | medium | hard (subjective, for stratified statistics)"
+
+  # --- Prompt: templated form (preferred) -------------------------------------
+  # The prompt is NOT stored as one fixed string. It is assembled from ordered
+  # segments, some of which are gated by a parameter. A generator (generate.py)
+  # randomly drops eligible parameters each run to create information-gap instances,
+  # while recording exactly which parameters were dropped (the D1 ground truth).
+  prompt_segments:
+    desc:  "Ordered list of text fragments concatenated to build the prompt."
+    item:
+      text:     "Fragment text; may contain {param} placeholders filled from `parameters`."
+      requires: "Optional parameter id. If that parameter is dropped, this fragment is omitted.
+                 Fragments with no `requires` are always present (core problem statement)."
+
+  parameters:
+    desc:  "Physical quantities referenced by prompt_segments."
+    item:
+      value:     "The value substituted into {param} placeholders."
+      unit:      "Unit (documentation only)."
+      droppable: "true if this parameter may be removed to create an information gap."
+      on_drop:   "ask (no sensible default; Agent SHOULD ask) |
+                  assume_ok (a standard default exists, e.g. steel density; Agent MAY assume
+                  and declare). Drives D1 scoring."
+      critical:  "true if omitting it materially changes the result (optional, for weighting)."
+
+  drop_policy:
+    desc:  "Controls random information-gap generation for this case."
+    eligible:        "List of parameter ids allowed to be dropped (subset of droppable=true)."
+    n_drop:          "{min, max} number of parameters to drop per run. min:0 => full-info baseline."
+    never_drop_together: "Optional list of id-groups that must not be dropped simultaneously
+                          (would make the case unsolvable/ambiguous)."
+
+  # `prompt` (derived): the fully-rendered string with all parameters present. Optional to store;
+  # generate.py can emit it. Kept for human readability / diffing.
+  prompt:    "Derived full prompt (all parameters present). Documentation/baseline only."
+
+  inputs:    "Structured key inputs, used to recompute the reference and for human review.
+              NOT sent to the Agent. (May overlap with `parameters`.)"
+
+  modeling_contract:
+    desc:    "Minimal constraints imposed on the Agent so results can be extracted
+              automatically. The parts that must be obeyed are embedded into `prompt`."
+    required_sets:  "Node/element set names the Agent must create; scripts locate values by them."
+    notes:          "Other conventions: unit system, working directory, job naming, etc."
+
+  expected:
+    desc:  "List of D2 grading items. Each item is one output quantity to be checked."
+    item:
+      name:        "Output identifier, e.g. hoop_stress_inner."
+      description: "Human-readable description."
+      kind:        "exact (closed-form, strict) | trend (qualitative / order-of-magnitude)"
+      # --- used when kind=exact ---
+      value:       "Reference value (scalar)."
+      tol:         "Relative tolerance, e.g. 0.02 = +/-2%. error = |sim-value| / |value|."
+      # --- used when kind=trend ---
+      range:       "[lo, hi] acceptable interval (order-of-magnitude check)."
+      sign:        "Expected sign '+' | '-' (optional)."
+      monotonic:   "Monotonicity requirement vs an independent variable,
+                    e.g. 'increasing vs compression' (optional)."
+      value_status: "ok | needs_literature_pinning (flag when a trend interval is not yet fixed)."
+      # --- common ---
+      unit:        "Unit of the quantity."
+      extract:
+        desc:    "Where the grading script reads the ground-truth value, bypassing the
+                  Agent's self-reported numbers."
+        source:  "odb | dat | agent_report"
+        # when source=odb:
+        field:        "S | U | NT | CPRESS | RF | ... output variable"
+        component:    "S33 | U1 | Magnitude | Mises | ... component/invariant"
+        coordsys:     "global | cylindrical (optional; for hoop/radial extraction)"
+        quantity:     "eigenfrequency (with `mode`) | contact_pressure | reaction_force | ..."
+        mode:         "Mode number (integer), when quantity=eigenfrequency."
+        location:     "{set: <name>, op: max | min | max_abs | mean | node}"
+        # when source=dat:
+        regex:        "Regex to pull the value from the .dat file (named group `value`)."
+        # when source=agent_report:
+        report_key:   "Key the Agent must emit in a structured final block."
+
+  reference:
+    formula:   "Closed-form reference formula (string)."
+    computed:  "Numerical value after substituting inputs (must match expected.value; auditable)."
+    source:    "Literature source."
+
+  notes:       "Optional remarks."

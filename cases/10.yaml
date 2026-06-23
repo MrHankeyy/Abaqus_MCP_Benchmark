@@ -1,0 +1,60 @@
+schema_version: 1
+
+id: "10"
+name: Viscoelastic bar stress relaxation
+tags: {analysis: S, geometry: 3D, material: VE}
+difficulty: medium
+
+prompt_segments:
+  - text: >-
+      A slender bar with a 10 mm x 10 mm square cross-section and length 100 mm is held at a
+      fixed axial strain and the stress relaxation is observed over time.
+  - text: " At t = 0 the bar is stretched to an axial strain eps0 = {eps0} and held constant."
+    requires: eps0
+  - text: >-
+      The material is linear viscoelastic with instantaneous modulus E0 = {E0} MPa and a single
+      Prony term: relaxation (shear/normalized) modulus ratio g1 = {g1}, relaxation time
+      tau1 = {tau} s. (Long-term modulus E_inf = E0*(1-g1).)
+    requires: tau
+  - text: >-
+      Report the axial stress at t = 10 s and the long-term (steady-state) axial stress.
+      Requirements: use the mm-N-MPa-s unit system; put all elements in an element set named BODY.
+
+parameters:
+  eps0: {value: 0.01, unit: "-",  droppable: true, on_drop: ask, critical: true}
+  E0:   {value: 100,  unit: MPa,  droppable: false}
+  g1:   {value: 0.8,  unit: "-",  droppable: false}
+  tau:  {value: 10,   unit: s,    droppable: true, on_drop: ask, critical: true}
+
+drop_policy:
+  eligible: [eps0, tau]
+  n_drop: {min: 0, max: 2}
+
+inputs: {E0_MPa: 100, E_inf_MPa: 20, g1: 0.8, tau1_s: 10, eps0: 0.01}
+
+modeling_contract:
+  required_sets: [BODY]
+  notes: mm-N-MPa-s; time-domain viscoelasticity (Prony g_i, tau_i); quasi-static visco step.
+
+expected:
+  - name: stress_at_10s
+    description: Axial stress at t = 10 s
+    kind: exact
+    value: 0.494
+    tol: 0.03
+    unit: MPa
+    extract: {source: odb, field: S, component: S33, time: 10.0, location: {set: BODY, op: mean}}
+  - name: stress_steady
+    description: Long-term (t -> inf) axial stress
+    kind: exact
+    value: 0.20
+    tol: 0.03
+    unit: MPa
+    extract: {source: odb, field: S, component: S33, time: end, location: {set: BODY, op: mean}}
+
+reference:
+  formula: "E(t) = E_inf + (E0 - E_inf) exp(-t/tau); sigma(t) = eps0 * E(t)"
+  computed: {stress_at_10s: 0.494, stress_steady: 0.20}
+  source: "Linear viscoelastic relaxation, Prony series"
+
+notes: Run long enough (>= ~5 tau) for the steady-state stress to be reached.

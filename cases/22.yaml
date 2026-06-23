@@ -1,0 +1,61 @@
+schema_version: 1
+
+id: "22"
+name: Constrained bar, thermally induced plasticity
+tags: {analysis: T, geometry: 3D, material: EP}
+difficulty: medium
+
+prompt_segments:
+  - text: >-
+      A steel bar of length 1.0 m with a 20 mm x 20 mm square cross-section is fully fixed at
+      both ends. Its temperature is raised uniformly and progressively.
+  - text: " The material is elastic-perfectly-plastic with Young's modulus E = {E} GPa."
+  - text: " The yield stress is sigma_y = {sy} MPa."
+    requires: sy
+  - text: " The coefficient of thermal expansion is alpha = {alpha} /degC."
+    requires: alpha
+  - text: " The final uniform temperature rise is delta_T = {dT} degC."
+    requires: dT
+  - text: >-
+      Report (1) the temperature rise at which the bar first yields and (2) the axial stress at
+      the final temperature. Requirements: use the mm-N-MPa unit system; put one end's nodes in
+      a node set named END_A and all elements in an element set named BODY.
+
+parameters:
+  E:     {value: 200,   unit: GPa,     droppable: true,  on_drop: assume_ok, critical: false}
+  sy:    {value: 250,   unit: MPa,     droppable: true,  on_drop: ask,       critical: true}
+  alpha: {value: 12e-6, unit: "/degC", droppable: true,  on_drop: assume_ok, critical: true}
+  dT:    {value: 200,   unit: degC,    droppable: true,  on_drop: ask,       critical: true}
+
+drop_policy:
+  eligible: [sy, alpha, dT]
+  n_drop: {min: 0, max: 2}
+
+inputs: {L_m: 1.0, A_mm2: 400, E_GPa: 200, sigma_y_MPa: 250, alpha: 12e-6, dT_degC: 200}
+
+modeling_contract:
+  required_sets: [END_A, BODY]
+  notes: mm-N-MPa; static step with progressively increasing predefined temperature field; elastic-perfectly-plastic.
+
+expected:
+  - name: yield_temperature_rise
+    description: Temperature rise at first yield
+    kind: exact
+    value: 104.2
+    tol: 0.03
+    unit: degC
+    extract: {source: odb, field: PEEQ, quantity: yield_onset, location: {set: BODY, op: max}}
+  - name: final_axial_stress
+    description: Axial stress at delta_T = 200 degC (clamped at yield)
+    kind: exact
+    value: -250
+    tol: 0.02
+    unit: MPa
+    extract: {source: odb, field: S, component: S11, time: end, location: {set: BODY, op: mean}}
+
+reference:
+  formula: "delta_T_y = sigma_y/(E alpha); beyond yield the stress is capped at -sigma_y (perfect plasticity)"
+  computed: {yield_temperature_rise: 104.2, final_axial_stress: -250}
+  source: "Constrained thermo-plastic bar (basic analysis)"
+
+notes: "Key behaviour to detect: stress stops increasing past yield; further heating creates plastic strain."
