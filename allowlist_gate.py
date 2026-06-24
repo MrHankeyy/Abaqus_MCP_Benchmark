@@ -34,6 +34,12 @@ MCP_ALLOW_PREFIX = ("mcp__abaqus-mcp__",)
 READ_TOOLS = {"Read", "Glob", "Grep"}
 WRITE_TOOLS = {"Write", "Edit"}
 
+# Files that are off-limits even inside the sandbox (they leak config / absolute
+# paths). Matched by basename. NOTE: this stops a tool that *targets* the file
+# directly; it cannot stop a recursive Grep that merely descends into it -- the
+# real protection for those is keeping the file OUTSIDE the sandbox root.
+OFFLIMITS_NAMES = {".mcp.json"}
+
 
 def _emit(decision: str, reason: str) -> None:
     print(json.dumps({
@@ -117,6 +123,9 @@ def main() -> None:
             # .claude holds the sandbox's own config; off-limits to read AND write.
             if within(p, protected):
                 deny(f"the sandbox config dir '{protected}' is off-limits")
+                return
+            if os.path.basename(p) in OFFLIMITS_NAMES:
+                deny(f"'{os.path.basename(p)}' is off-limits")
                 return
 
         allow()
