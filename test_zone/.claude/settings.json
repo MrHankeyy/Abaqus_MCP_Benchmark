@@ -8,6 +8,8 @@
       "Write(./**)",
       "Glob(./**)",
       "Grep(./**)",
+      "ToolSearch",
+      "Skill",
       "mcp__abaqus-mcp"
     ],
     "deny": [
