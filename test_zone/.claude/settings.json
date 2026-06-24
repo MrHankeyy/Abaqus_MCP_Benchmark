@@ -13,11 +13,11 @@
       "mcp__abaqus-mcp"
     ],
     "deny": [
-      "Read(../**)",
-      "Edit(../**)",
-      "Write(../**)",
-      "Glob(../**)",
-      "Grep(../**)"
+      "Bash",
+      "PowerShell",
+      "WebFetch",
+      "WebSearch",
+      "Agent"
     ]
   },
   "hooks": {
