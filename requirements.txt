@@ -1,1 +1,4 @@
-PyYAML>=6.0
+# Benchmark harness dependencies (Python >= 3.10).
+# Runs in a project-local venv (.venv), separate from Abaqus's own Python.
+PyYAML==6.0.3
+claude-agent-sdk==0.2.108

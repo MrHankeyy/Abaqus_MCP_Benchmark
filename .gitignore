@@ -1,6 +1,8 @@
 *.pyc
 __pycache__
 .mcp.json
+.venv/
+notes.txt
 
 # Agent scratch workspace: track the sandbox config, ignore all runtime output
 # (input decks, jobs, .odb/.dat/.lck, logs, screenshots). This keeps the working

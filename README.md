@@ -55,7 +55,7 @@ schema.yaml              Field definitions for a case (the contract every case f
 cases/NN.yaml            22 benchmark cases (templated)
 instructions_en.md       Global operating instructions (preamble) prepended to every prompt
 generate.py              Build a prompt instance from a case (+ random information-gap)
-requirements.txt         PyYAML
+requirements.txt         Harness deps: PyYAML + claude-agent-sdk
 BENCHMARK_v1_en.md       Design doc (English)
 BENCHMARK_v1.md         Design doc (Chinese)
 NOTES.md                 Open questions / observations log
@@ -75,7 +75,16 @@ removed independently.
 
 ### Usage
 
+Prerequisites: **Python >= 3.10** and the **`claude` CLI** on PATH
+(`npm install -g @anthropic-ai/claude-code`) — the harness drives the agent
+through `claude-agent-sdk`, which spawns that CLI.
+
 ```bash
+# Create an isolated environment (kept out of git; separate from Abaqus's Python):
+python -m venv .venv
+# Windows:        .\.venv\Scripts\Activate.ps1
+# macOS / Linux:  source .venv/bin/activate
+
 pip install -r requirements.txt
 
 # Full-information prompt for a case:
@@ -180,7 +189,7 @@ schema.yaml              算例字段定义（每个算例遵循的契约）
 cases/NN.yaml            22 个算例（模板化）
 instructions_en.md       全局操作指令（preamble），拼接在每个 prompt 前
 generate.py              从算例生成 prompt 实例（含随机信息缺失）
-requirements.txt         PyYAML
+requirements.txt         harness 依赖：PyYAML + claude-agent-sdk
 BENCHMARK_v1_en.md       设计文档（英文）
 BENCHMARK_v1.md         设计文档（中文）
 NOTES.md                 开放问题 / 观察记录
@@ -197,7 +206,16 @@ NOTES.md                 开放问题 / 观察记录
 
 ### 使用方法
 
+前置要求：**Python >= 3.10** 且 PATH 上有 **`claude` CLI**
+（`npm install -g @anthropic-ai/claude-code`）——harness 通过 `claude-agent-sdk`
+驱动 agent，该库会调用此 CLI。
+
 ```bash
+# 建独立虚拟环境（不进 git；与 Abaqus 自带的 Python 互不影响）：
+python -m venv .venv
+# Windows：       .\.venv\Scripts\Activate.ps1
+# macOS / Linux： source .venv/bin/activate
+
 pip install -r requirements.txt
 
 # 某算例的满信息 prompt：

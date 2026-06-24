@@ -1,13 +1,7 @@
 {
   "permissions": {
     "defaultMode": "default",
-    "additionalDirectories": [],
     "allow": [
-      "Read(./**)",
-      "Edit(./**)",
-      "Write(./**)",
-      "Glob(./**)",
-      "Grep(./**)",
       "ToolSearch",
       "Skill",
       "mcp__abaqus-mcp"
@@ -25,10 +19,7 @@
       {
         "matcher": "*",
         "hooks": [
-          {
-            "type": "command",
-            "command": "python ../allowlist_gate.py"
-          }
+          { "type": "command", "command": "python ../allowlist_gate.py" }
         ]
       }
     ]
