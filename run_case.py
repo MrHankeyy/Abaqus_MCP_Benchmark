@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""
+r"""
 Single-case evaluation harness for the ABAQUS-MCP benchmark.
 
 Runs ONE case end-to-end and scores it on the pipeline dimensions:
@@ -392,7 +392,10 @@ def grade_d5(dat_path):
     def find(pat):
         m = re.search(pat, txt, re.I)
         return m.group(1) if m else None
-    dof = find(r"NUMBER OF DEGREES OF FREEDOM[ .]*([0-9,]+)")
+    # Abaqus reports model size as "TOTAL NUMBER OF VARIABLES IN THE MODEL <n>"
+    # (= DOF + Lagrange multipliers); fall back to the older DOF wording.
+    dof = find(r"TOTAL NUMBER OF VARIABLES IN THE MODEL\s+([0-9,]+)") \
+        or find(r"NUMBER OF DEGREES OF FREEDOM[ .]*([0-9,]+)")
     wall = find(r"WALLCLOCK TIME \(SEC\)\s*=\s*([0-9.]+)")
     cpu = find(r"TOTAL CPU TIME \(SEC\)\s*=\s*([0-9.]+)")
     return {"dof": dof and int(dof.replace(",", "")),
