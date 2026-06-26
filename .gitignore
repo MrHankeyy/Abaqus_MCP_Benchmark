@@ -11,3 +11,4 @@ test_zone/*
 !test_zone/.claude/
 smoke_test.py
 test_zone_evil/
+results/
